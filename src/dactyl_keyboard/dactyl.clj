@@ -16,19 +16,19 @@
 (def nrows 5)
 (def ncols 7)
 
-(def α (/ π 12))                        ; curvature of the columns
+(def α (/ π 16))                        ; curvature of the columns
 (def β (/ π 36))                        ; curvature of the rows
-(def centerrow (- nrows 3))             ; controls front-back tilt
-(def centercol 4)                       ; controls left-right tilt / tenting (higher number is more tenting)
+(def centerrow (- nrows 2.8))             ; controls front-back tilt
+(def centercol 3)                       ; controls left-right tilt / tenting (higher number is more tenting)
 (def tenting-angle (/ π 12))            ; or, change this for more precise tenting control
 
-(def pinky-15u true)                   ; controls whether the outer column uses 1.5u keys
+(def pinky-15u false)                   ; controls whether the outer column uses 1.5u keys
 (def first-15u-row 0)                   ; controls which should be the first row to have 1.5u keys on the outer column
 (def last-15u-row 3)                    ; controls which should be the last row to have 1.5u keys on the outer column
 
 (def extra-row true)                   ; adds an extra bottom row to the outer columns
 (def inner-column true)                ; adds an extra inner column (two less rows than nrows)
-(def thumb-style "cf")                ; toggles between "default", "mini", and "cf" thumb cluster
+(def thumb-style "mini")                ; toggles between "default", "mini", and "cf" thumb cluster
 
 (def column-style :standard)
 
@@ -44,7 +44,7 @@
 
 (def thumb-offsets [6 -3 7])
 
-(def keyboard-z-offset 8)               ; controls overall height; original=9 with centercol=3; use 16 for centercol=2
+(def keyboard-z-offset 10)  ;; ##### PRETTY sure this was 10 for my actual print             ; controls overall height; original=9 with centercol=3; use 16 for centercol=2
 
 (def extra-width 2.5)                   ; extra space between the base of keys; original= 2
 (def extra-height 1.0)                  ; original= 0.5
