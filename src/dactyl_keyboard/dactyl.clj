@@ -14,7 +14,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;
 
 (def nrows 5)
-(def ncols 7)
+(def ncols 8)
 
 (def α (/ π 16))                        ; curvature of the columns
 (def β (/ π 36))                        ; curvature of the rows
