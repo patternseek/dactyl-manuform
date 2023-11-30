@@ -36,32 +36,23 @@
   (if inner-column
     (cond (<= column 1) [0 -2 0]
           (= column 3) [0 2.82 -4.5]
-          (>= column 5) [0 -12 5.64]    ; original [0 -5.8 5.64]
+          (>= column 5) [0 -12 5.64]   ; original [0 -5.8 5.64]
           :else [0 0 0])
-    (cond (= column 2) [0 2.82 -4.5]
-          (>= column 4) [0 -12 5.64]    ; original [0 -5.8 5.64]
+    (cond (= column 0) [0 -2 0]
+		  (= column 2) [0 2.82 -4.5]
+          (>= column 4) [0 -12 5.64]   ; original [0 -5.8 5.64]
           :else [0 0 0])))
 
 (def thumb-offsets [6 -3 7])
 
 (def keyboard-z-offset 10)  ;; ##### PRETTY sure this was 10 for my actual print             ; controls overall height; original=9 with centercol=3; use 16 for centercol=2
 
-(def extra-width 2.5)                   ; extra space between the base of keys; original= 2
-(def extra-height 1.0)                  ; original= 0.5
+(def extra-width 2.5)                  ; extra space between the base of keys; original= 2
+(def extra-height 1.0)                 ; original= 0.5
 
 (def wall-z-offset -8)                 ; length of the first downward-sloping part of the wall (negative)
-(def wall-xy-offset 5)                  ; offset in the x and/or y direction for the first downward-sloping part of the wall (negative)
-(def wall-thickness 2)                  ; wall thickness parameter; originally 5
-
-;; Settings for column-style == :fixed
-;; The defaults roughly match Maltron settings
-;; http://patentimages.storage.googleapis.com/EP0219944A2/imgf0002.png
-;; Fixed-z overrides the z portion of the column ofsets above.
-;; NOTE: THIS DOESN'T WORK QUITE LIKE I'D HOPED.
-(def fixed-angles [(deg2rad 10) (deg2rad 10) 0 0 0 (deg2rad -15) (deg2rad -15)])
-(def fixed-x [-41.5 -22.5 0 20.3 41.4 65.5 89.6])  ; relative to the middle finger
-(def fixed-z [12.1    8.3 0  5   10.7 14.5 17.5])
-(def fixed-tenting (deg2rad 0))
+(def wall-xy-offset 5)                 ; offset in the x and/or y direction for the first downward-sloping part of the wall (negative)
+(def wall-thickness 2)                 ; wall thickness parameter; originally 5
 
 ; If you use Cherry MX or Gateron switches, this can be turned on.
 ; If you use other switches such as Kailh, you should set this as false
@@ -210,26 +201,8 @@
                           (rotate-y-fn  column-angle)
                           (translate-fn [0 0 column-radius])
                           (translate-fn (column-offset column)))
-        column-z-delta (* column-radius (- 1 (Math/cos column-angle)))
-        placed-shape-ortho (->> shape
-                                (translate-fn [0 0 (- row-radius)])
-                                (rotate-x-fn  (* α (- centerrow row)))
-                                (translate-fn [0 0 row-radius])
-                                (rotate-y-fn  column-angle)
-                                (translate-fn [(- (* (- column centercol) column-x-delta)) 0 column-z-delta])
-                                (translate-fn (column-offset column)))
-        placed-shape-fixed (->> shape
-                                (rotate-y-fn  (nth fixed-angles column))
-                                (translate-fn [(nth fixed-x column) 0 (nth fixed-z column)])
-                                (translate-fn [0 0 (- (+ row-radius (nth fixed-z column)))])
-                                (rotate-x-fn  (* α (- centerrow row)))
-                                (translate-fn [0 0 (+ row-radius (nth fixed-z column))])
-                                (rotate-y-fn  fixed-tenting)
-                                (translate-fn [0 (second (column-offset column)) 0]))]
-    (->> (case column-style
-               :orthographic placed-shape-ortho
-               :fixed        placed-shape-fixed
-               placed-shape)
+        column-z-delta (* column-radius (- 1 (Math/cos column-angle)))]
+    (->> (case column-style placed-shape)
          (rotate-y-fn  tenting-angle)
          (translate-fn [0 0 keyboard-z-offset]))))
 
@@ -424,9 +397,9 @@
                (key-place (inc column) row web-post-bl)
                (key-place column row web-post-br)))))))
 
-;;;;;;;;;;;;;;;;;;;
-;; Default Thumb ;;
-;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;
+;; Manuform Thumb ;;
+;;;;;;;;;;;;;;;;;;;;
 
 (def thumborigin
   (map + (key-position (+ innercol-offset 1) cornerrow [(/ mount-width 2) (- (/ mount-height 2)) 0])
@@ -776,7 +749,7 @@
        (key-place (+ innercol-offset 4) cornerrow web-post-bl))))))
 
 ;;;;;;;;;;;;;;;;
-;; cf Thumb ;;
+;;  CF Thumb  ;;
 ;;;;;;;;;;;;;;;;
 
 (defn cfthumb-tl-place [shape]
@@ -952,7 +925,7 @@
        (key-place (+ innercol-offset 4) cornerrow web-post-bl))))))
 
 ;switching connectors, switchplates, etc. depending on thumb-style used
-(when (= thumb-style "default")
+(when (= thumb-style "manuform")
   (def thumb-type thumb)
   (def thumb-connector-type thumb-connectors)
   (def thumbcaps-type thumbcaps)
@@ -982,8 +955,8 @@
 (defn bottom-hull [& p]
   (hull p (bottom 0.001 p)))
 
-(def left-wall-x-offset 4)
-(def left-wall-z-offset 1)
+(def left-wall-x-offset (if inner-column 4 9))
+(def left-wall-z-offset 1) 
 
 (defn left-key-position [row direction]
   (map - (key-position 0 row [(* mount-width -0.5) (* direction mount-height 0.5) 0]) [left-wall-x-offset 0 left-wall-z-offset]) )
@@ -1059,13 +1032,14 @@
            (key-wall-brace lastcol extra-cornerrow 0 -1 web-post-br lastcol extra-cornerrow 1 0 web-post-br)
            )))
 
+(def cf-thumb-offset (if inner-column -0.3 -1.7))
 (def cf-thumb-wall
   (union
    ; thumb walls
    (wall-brace cfthumb-mr-place  0 -1 web-post-br cfthumb-tr-place  0 -1 web-post-br)
    (wall-brace cfthumb-mr-place  0 -1 web-post-br cfthumb-mr-place  0 -1.15 web-post-bl)
    (wall-brace cfthumb-br-place  0 -1 web-post-br cfthumb-br-place  0 -1 web-post-bl)
-   (wall-brace cfthumb-bl-place -0.3  1 thumb-post-tr cfthumb-bl-place  0  1 thumb-post-tl)
+   (wall-brace cfthumb-bl-place  cf-thumb-offset  1 thumb-post-tr cfthumb-bl-place  0 1 thumb-post-tl)
    (wall-brace cfthumb-br-place -1  0 web-post-tl cfthumb-br-place -1  0 web-post-bl)
    (wall-brace cfthumb-bl-place -1  0 thumb-post-tl cfthumb-bl-place -1  0 web-post-bl)
    ; cfthumb corners
@@ -1079,13 +1053,13 @@
    (bottom-hull
     (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate2 -1 0) web-post))
     (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate3 -1 0) web-post))
-    (cfthumb-bl-place (translate (wall-locate2 -0.3 1) thumb-post-tr))
-    (cfthumb-bl-place (translate (wall-locate3 -0.3 1) thumb-post-tr)))
+    (cfthumb-bl-place (translate (wall-locate2 cf-thumb-offset 1) thumb-post-tr))
+    (cfthumb-bl-place (translate (wall-locate3 cf-thumb-offset 1) thumb-post-tr)))
    (hull
     (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate2 -1 0) web-post))
     (left-key-place (- cornerrow innercol-offset) -1 (translate (wall-locate3 -1 0) web-post))
-    (cfthumb-bl-place (translate (wall-locate2 -0.3 1) thumb-post-tr))
-    (cfthumb-bl-place (translate (wall-locate3 -0.3 1) thumb-post-tr))
+    (cfthumb-bl-place (translate (wall-locate2 cf-thumb-offset 1) thumb-post-tr))
+    (cfthumb-bl-place (translate (wall-locate3 cf-thumb-offset 1) thumb-post-tr))
     (cfthumb-ml-place thumb-post-tl))
    (hull
     (left-key-place (- cornerrow innercol-offset) -1 web-post)
@@ -1100,9 +1074,9 @@
     (cfthumb-ml-place thumb-post-tl))
    (hull
     (cfthumb-bl-place thumb-post-tr)
-    (cfthumb-bl-place (translate (wall-locate1 -0.3 1) thumb-post-tr))
-    (cfthumb-bl-place (translate (wall-locate2 -0.3 1) thumb-post-tr))
-    (cfthumb-bl-place (translate (wall-locate3 -0.3 1) thumb-post-tr))
+    (cfthumb-bl-place (translate (wall-locate1 cf-thumb-offset 1) thumb-post-tr))
+    (cfthumb-bl-place (translate (wall-locate2 cf-thumb-offset 1) thumb-post-tr))
+    (cfthumb-bl-place (translate (wall-locate3 cf-thumb-offset 1) thumb-post-tr))
     (cfthumb-ml-place thumb-post-tl))
    ; connectors below the inner column to the thumb & second column
    (if inner-column
@@ -1189,7 +1163,7 @@
        (key-place 1 cornerrow web-post-bl)
        (minithumb-tl-place minithumb-post-tl))))))
 
-(def default-thumb-wall
+(def manuform-thumb-wall
   (union
    ; thumb walls
    (wall-brace thumb-mr-place  0 -1 web-post-br thumb-tr-place  0 -1 thumb-post-br)
@@ -1260,7 +1234,7 @@
 ;switching walls depending on thumb-style used
 (def thumb-wall-type
   (case thumb-style
-    "default" default-thumb-wall
+    "manuform" manuform-thumb-wall
     "cf" cf-thumb-wall
     "mini" mini-thumb-wall))
 
@@ -1284,8 +1258,8 @@
                                                          (left-key-place y        1 web-post)
                                                          (left-key-place (dec y) -1 web-post)
                                                          )))
-   (wall-brace (partial key-place 0 0) 0 1 web-post-tl (partial left-key-place 0 1) -0.6 1 web-post)
-   (wall-brace (partial left-key-place 0 1) -0.6 1 web-post (partial left-key-place 0 1) -1 0 web-post)
+   (wall-brace (partial key-place 0 0) 0 1 web-post-tl (partial left-key-place 0 1) (if inner-column -0.6 -0.3) (if inner-column 1 1.3) web-post)
+   (wall-brace (partial left-key-place 0 1) (if inner-column -0.6 -0.3) (if inner-column 1 1.3) web-post (partial left-key-place 0 1) -1 0 web-post)
    ; front wall
    (key-wall-brace (+ innercol-offset 3) lastrow  0 -1 web-post-bl (+ innercol-offset 3) lastrow   0 -1 web-post-br)
    (key-wall-brace (+ innercol-offset 3) lastrow  0 -1 web-post-br (+ innercol-offset 4) extra-cornerrow 0 -1 web-post-bl)
@@ -1297,10 +1271,8 @@
 (def holder-offset
   (case nrows
     4 -3.5
-    5 0
-    6 (if inner-column
-          3.2
-          2.2)))
+    5 (if inner-column 0 -6.5)
+    6 (if inner-column 3.2 2.2)))
 
 (def notch-offset
   (case nrows
@@ -1308,12 +1280,12 @@
     5 0.15
     6 -5.07))
 
-; Cutout for controller/trrs jack holder
+; Cutout for MCU holder
 (def usb-holder-ref (key-position 0 0 (map - (wall-locate2  0  -1) [0 (/ mount-height 2) 0])))
-(def usb-holder-position (map + [(+ 18.8 holder-offset) 18.7 1.3] [(first usb-holder-ref) (second usb-holder-ref) 2]))
-(def usb-holder-space  (translate (map + usb-holder-position [-1.5 (* -1 wall-thickness) 2.9]) (cube 28.666 30 12.4)))
-(def usb-holder-notch  (translate (map + usb-holder-position [-1.5 (+ 4.4 notch-offset) 2.9]) (cube 31.366 1.3 12.4)))
-(def trrs-notch        (translate (map + usb-holder-position [-10.33 (+ 3.6 notch-offset) 6.6]) (cube 8.4 2.4 19.8)))
+(def usb-holder-position (map + [(+ 18.8 holder-offset) 18.7 1.3] [(first usb-holder-ref) (second usb-holder-ref) 1.8]))
+(def usb-holder-space  (translate (map + usb-holder-position [-1.5 (* -1 wall-thickness) 2.1]) (cube 28.666 30 10.4)))
+(def usb-holder-notch-l  (translate (map + usb-holder-position [-12 (+ 4.4 notch-offset) 2.1]) (cube 10 1.3 10.4)))
+(def usb-holder-notch-r  (translate (map + usb-holder-position [9 (+ (if inner-column 4.4 6.4) notch-offset) 2.1]) (cube 10 1.3 10.4)))
 
 ; Screw insert definition & position
 (defn screw-insert-shape [bottom-radius top-radius height]
@@ -1353,7 +1325,7 @@
     (def screw-offset-tm [9.5 -4.5 0])
     (def screw-offset-bm [13 -7 0]))
 (when (and (= thumb-style "cf") (false? inner-column))
-    (def screw-offset-bl [-7.7 2 0])
+    (def screw-offset-bl [-3.5 2 0])
     (def screw-offset-tm [9.5 -4.5 0])
     (def screw-offset-bm [13 -7 0]))
 (when (and (= thumb-style "mini") inner-column)
@@ -1364,11 +1336,11 @@
     (def screw-offset-bl [-1 4.2 0])
     (def screw-offset-tm [9.5 -4.5 0])
     (def screw-offset-bm [-1 -7 0]))
-(when (and (= thumb-style "default") inner-column)
+(when (and (= thumb-style "manuform") inner-column)
     (def screw-offset-bl [5 -6 0])
     (def screw-offset-tm [9.5 -4.5 0])
     (def screw-offset-bm [8 -1 0]))
-(when (and (= thumb-style "default") (false? inner-column))
+(when (and (= thumb-style "manuform") (false? inner-column))
     (def screw-offset-bl [-11.7 -8 0])
     (def screw-offset-tm [9.5 -4.5 0])
     (def screw-offset-bm [8 -1 0]))
@@ -1448,8 +1420,8 @@
                      (difference (union case-walls
                                         screw-insert-outers)
                                  usb-holder-space
-                                 trrs-notch
-                                 usb-holder-notch
+                                 usb-holder-notch-l
+                                 usb-holder-notch-r
                                  screw-insert-holes))
                    (translate [0 0 -20] (cube 350 350 40))))
 
